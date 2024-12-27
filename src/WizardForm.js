@@ -44,7 +44,6 @@ const WizardForm = () => {
   const [stepIndex, setStepIndex] = useState(0);
   const [formData, setFormData] = useState({});
 
-  // Use `getValues` to fetch all the values at the final submission
   const methods = useForm({
     resolver: zodResolver(stepSchemas[stepIndex]),
     mode: "onTouched",
@@ -57,24 +56,31 @@ const WizardForm = () => {
     },
   });
 
-  const { handleSubmit, getValues } = methods;
+  const {
+    handleSubmit,
+    getValues,
+    formState: { isValid },
+  } = methods;
 
   const handleComplete = (data) => {
     console.log("Final Form Data:", { ...formData, ...data }); // Combine formData with final step data
   };
 
   const onNextStep = (data) => {
-    // Combine the current step data with the accumulated form data
     const accumulatedData = { ...formData, ...data };
-    setFormData(accumulatedData); // Save accumulated form data
+    setFormData(accumulatedData);
+    console.log("Current Step Data:", accumulatedData);
 
-    console.log("Current Step Data:", accumulatedData); // Log accumulated data after each step
-
-    // Ensure next step
     if (stepIndex < stepSchemas.length - 1) {
-      setStepIndex((prev) => prev + 1); // Move to the next step
+      setStepIndex((prev) => prev + 1);
     } else {
       handleSubmit(handleComplete)(); // Submit on final step
+    }
+  };
+
+  const onBackStep = () => {
+    if (stepIndex > 0) {
+      setStepIndex((prev) => prev - 1); // Move to the previous step
     }
   };
 
@@ -89,7 +95,31 @@ const WizardForm = () => {
   return (
     <FormProvider {...methods}>
       <Wizard>
-        <StepForm onSubmit={onNextStep}>{steps[stepIndex]}</StepForm>
+        <StepForm onSubmit={onNextStep}>
+          {steps[stepIndex]}
+
+          <div className="flex justify-between mt-4">
+            {stepIndex > 0 && (
+              <button
+                type="button"
+                onClick={onBackStep}
+                className="px-4 py-2 bg-gray-300 text-black rounded"
+              >
+                Back
+              </button>
+            )}
+
+            <button
+              type="submit"
+              disabled={!isValid}
+              className={`px-4 py-2 rounded ${
+                isValid ? "bg-blue-500 text-white" : "bg-gray-300 text-black"
+              }`}
+            >
+              {stepIndex === stepSchemas.length - 1 ? "Submit" : "Next"}
+            </button>
+          </div>
+        </StepForm>
       </Wizard>
     </FormProvider>
   );
